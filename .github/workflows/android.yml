@@ -22,19 +22,18 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Build Debug APK
+      - name: Build APK (Auto Locate Gradle Project)
         run: |
+          # البحث عن المجلد الذي يحتوي على build.gradle أو gradlew
+          PROJECT_DIR=$(dirname $(find . -maxdepth 3 -name "build.gradle" | head -n 1))
+          echo "Found project at: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          
           if [ -f "./gradlew" ]; then
             chmod +x ./gradlew
             ./gradlew assembleDebug --stacktrace
           else
-            echo "Gradle wrapper missing, generating wrapper and building..."
-            gradle wrapper
-            chmod +x ./gradlew
-            ./gradlew assembleDebug --stacktrace
+            gradle assembleDebug --stacktrace
           fi
 
       - name: Upload Production APK
