@@ -1,0 +1,46 @@
+name: Build Al-Kahali Assistant Production APK
+
+on:
+  push:
+    branches: [ "main", "master", "رئيسي" ]
+  pull_request:
+    branches: [ "main", "master", "رئيسي" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compile and Package Android Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK Tools
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Executable Gradle
+        run: |
+          find . -name "gradlew" -exec chmod +x {} \; || true
+
+      - name: Build Debug APK
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --stacktrace
+          else
+            echo "Building with system gradle..."
+            gradle assembleDebug --stacktrace
+          fi
+
+      - name: Find and Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlKahali-Smart-Assistant-App
+          path: "**/build/outputs/apk/debug/*.apk"
+          retention-days: 30
