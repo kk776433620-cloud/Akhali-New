@@ -1,0 +1,54 @@
+name: Build Al-Kahali Assistant Production APK
+
+on:
+  push:
+    branches: [ "main", "master", "رئيسي" ]
+  pull_request:
+    branches: [ "main", "master", "رئيسي" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compile and Package Android Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Setup Android SDK Tools
+        uses: android-actions/setup-android@v3
+
+      - name: Initialize Gradle Wrapper (If Missing)
+        run: |
+          if [ ! -f gradlew ]; then
+            echo "Gradle wrapper not found, generating wrapper..."
+            gradle wrapper
+          fi
+          chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace --continue
+
+      - name: Verify APK Generation
+        run: |
+          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            echo "APK Generated Successfully!"
+          else
+            echo "Error: APK file was not found!"
+            exit 1
+          fi
+
+      - name: Upload Production APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlKahali-Smart-Assistant-App
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
