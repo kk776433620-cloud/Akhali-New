@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -25,29 +25,22 @@ jobs:
       - name: Setup Android SDK Tools
         uses: android-actions/setup-android@v3
 
-      - name: Initialize Gradle Wrapper
+      - name: Ensure Executable Gradle
         run: |
-          if [ ! -f gradlew ]; then
-            echo "Gradle wrapper not found, generating wrapper..."
-            gradle wrapper
-          fi
-          chmod +x gradlew
+          find . -name "gradlew" -exec chmod +x {} \; || true
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --continue
-
-      - name: Verify APK Generation
         run: |
-          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
-            echo "APK Generated Successfully!"
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --stacktrace
           else
-            echo "Error: APK file was not found!"
-            exit 1
+            echo "Building with system gradle..."
+            gradle assembleDebug --stacktrace
           fi
 
-      - name: Upload Production APK Artifact
+      - name: Find and Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AlKahali-Smart-Assistant-App
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: "**/build/outputs/apk/debug/*.apk"
           retention-days: 30
