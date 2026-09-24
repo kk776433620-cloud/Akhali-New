@@ -16,18 +16,29 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      - name: Unzip Project Files if ZIP Exists
+        run: |
+          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Unzipping $ZIP_FILE..."
+            unzip -o "$ZIP_FILE" -d .
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build APK (Auto Locate Gradle Project)
+      - name: Build APK
         run: |
-          # البحث عن المجلد الذي يحتوي على build.gradle أو gradlew
-          PROJECT_DIR=$(dirname $(find . -maxdepth 3 -name "build.gradle" | head -n 1))
-          echo "Found project at: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
+          TARGET_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
+          if [ -z "$TARGET_DIR" ]; then
+            echo "Error: build.gradle not found even after unzipping!"
+            exit 1
+          fi
+          echo "Building inside directory: $TARGET_DIR"
+          cd "$TARGET_DIR"
           
           if [ -f "./gradlew" ]; then
             chmod +x ./gradlew
