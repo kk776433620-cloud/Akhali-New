@@ -22,12 +22,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK Tools
-        uses: android-actions/setup-android@v3
-
-      - name: Ensure Executable Gradle
+      - name: Make Gradle Executable
         run: |
-          find . -name "gradlew" -exec chmod +x {} \; || true
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+          else
+            find . -name "gradlew" -exec chmod +x {} \; || true
+          fi
 
       - name: Build Debug APK
         run: |
