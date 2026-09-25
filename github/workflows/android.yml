@@ -1,17 +1,17 @@
-name: Build Al-Kahali Assistant Production APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master", "رئيسي" ]
-  workflow_dispatch:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
-    name: Build Production APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -20,39 +20,18 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Fix JVM Target to 17 - Production Fix
+      - name: Force Remove Root build.gradle
         run: |
-          echo "Fixing all build.gradle files to Java 17..."
-          find . -name "build.gradle" -o -name "build.gradle.kts" | while read file; do
-            echo "Fixing $file"
-            # حول كل 1.8 الى 17
-            sed -i 's/VERSION_1_8/VERSION_17/g' "$file" || true
-            sed -i 's/VERSION_1_7/VERSION_17/g' "$file" || true
-            sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' "$file" || true
-            sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' "$file" || true
-            sed -i "s/jvmTarget = '1.8'/jvmTarget = '17'/g" "$file" || true
-            sed -i 's/JvmTarget.JVM_1_8/JvmTarget.JVM_17/g' "$file" || true
-            sed -i 's/sourceCompatibility 1.8/sourceCompatibility 17/g' "$file" || true
-            sed -i 's/targetCompatibility 1.8/targetCompatibility 17/g' "$file" || true
-          done
+          rm -f build.gradle
 
-      - name: Setup Gradle 8.5
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.5
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
 
-      - name: Build REAL Production APK - Release
-        run: |
-          # نبحث عن مشروع الأب
-          if [ -f "./app/build.gradle" ] || [ -f "./app/build.gradle.kts" ]; then
-            cd ./app/..
-          fi
-          # نبني النسخة الحقيقية Release وليس Debug
-          gradle assembleRelease --stacktrace
+      - name: Build APK with Gradle
+        run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload Production APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AlKahali-REAL-App-Production
-          path: "**/build/outputs/apk/release/*.apk"
-          retention-days: 30
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
