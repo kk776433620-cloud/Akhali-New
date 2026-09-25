@@ -1,33 +1,38 @@
-name: بناء تطبيق الكحالي الحقيقي
+name: Build Akhali APK
+
 on: [push, workflow_dispatch]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: اصلاح قسري لتجاوز خطأ JVM
+      - name: Force Java 17 Compatibility
         run: |
-          # إضافة تعطيل الفحص في كل الملفات
+          # تعطيل فحص التوافق وتغيير جميع الإشارات إلى 17 في كامل المستودع
           echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
           find . -name "gradle.properties" -exec sh -c 'echo "kotlin.jvm.target.validation.mode=IGNORE" >> "$1"' _ {} \;
-          
-          # تحويل أي إشارة لـ 1.8 إلى 17
-          find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g' {} +
+          find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g; s/JVM_1_8/JVM_17/g' {} +
 
-      - name: بناء APK
+      - name: Build APK with Gradle
         run: |
-          if [ -d "برنامج" ]; then cd "برنامج"; fi
-          if [ -f "./gradlew" ]; then chmod +x ./gradlew && ./gradlew assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE; else gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE; fi
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          else
+            gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          fi
 
-      - name: رفع التطبيق
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AlKahali-APK-Fixed-Final
+          name: Akhali-App-Debug
           path: "**/build/outputs/apk/debug/*.apk"
