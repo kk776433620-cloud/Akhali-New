@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Unzip All Archive Layers
+      - name: Unzip Project Archive
         run: |
           find . -iname "*.zip" -exec unzip -o {} -d . \;
           find . -iname "*.zip" -exec unzip -o {} -d . \;
@@ -27,11 +27,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Make All Gradlew Executable
+      - name: Make Gradlew Executable
         run: |
           find . -name "gradlew" -exec chmod +x {} \; || true
 
-      - name: Locate Project and Build APK
+      - name: Build APK with Matching JVM Target
         run: |
           BUILD_FILE=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           
@@ -41,17 +41,21 @@ jobs:
           fi
 
           TARGET_DIR=$(dirname "$BUILD_FILE")
-          echo "Project located at: $TARGET_DIR"
+          echo "Building in: $TARGET_DIR"
           cd "$TARGET_DIR"
           
+          # توحيد إصدارات JVM لتصبح Java 17 لكلا المترجمين تلقائياً
+          export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m"
+          
           if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --stacktrace --no-daemon
+            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Pandroid.builtInKotlin=false
           else
-            gradle assembleDebug --stacktrace --no-daemon
+            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Pandroid.builtInKotlin=false
           fi
 
       - name: Upload Production APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: AlKahali-Smart-Assistant-App
           path: "**/build/outputs/apk/debug/*.apk"
