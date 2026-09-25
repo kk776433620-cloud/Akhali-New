@@ -18,23 +18,20 @@ jobs:
       - name: Restructure Project Files Automatically
         run: |
           echo "=== Organizing project structure ==="
-          # إنشاء الهيكلية القياسية لأندرويد
           mkdir -p app/src/main/java/com/example/app
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/xml
 
-          # نقل ملفات الأكواد والموارد إلى أماكنها الصحيحة
+          # نقل ملفات المشروع إلى المسارات الصحيحة
           mv *.kt app/src/main/java/com/example/app/ 2>/dev/null || true
           mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # إنشاء ملف settings.gradle رئيسي إذا لم يكن موجوداً
-          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            echo "include ':app'" > settings.gradle
-          fi
+          # إنشاء ملف settings.gradle
+          echo "include ':app'" > settings.gradle
 
-          # إنشاء build.gradle رئيسي شامل لمستودعات أندرويد
+          # إنشاء build.gradle الرئيسي بإصدارات كوتلن و أندرويد الصحيحة والمستقرة
           cat << 'EOF' > build.gradle
           buildscript {
               repositories {
@@ -43,7 +40,7 @@ jobs:
               }
               dependencies {
                   classpath 'com.android.tools.build:gradle:8.1.1'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10'
+                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10'
               }
           }
           allprojects {
@@ -54,15 +51,18 @@ jobs:
           }
           EOF
 
-          # تجهيز build.gradle الخاص بالموديول داخل مجلد app
-          if [ -f "build.gradle" ] && [ ! -f "app/build.gradle" ]; then
-            mv build.gradle app/build.gradle 2>/dev/null || true
+          # إعداد build.gradle الخاص بتطبيق app
+          if [ -f "build.gradle.app" ]; then
+            mv build.gradle.app app/build.gradle
+          elif [ -f "build.gradle" ] && [ ! -f "app/build.gradle" ]; then
+            cp build.gradle app/build.gradle
           fi
 
-      - name: Fix Java & Android 9 Compatibility
+      - name: Fix Kotlin Version References
         run: |
           echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
-          find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g; s/JVM_1_8/JVM_17/g' {} +
+          # تصحيح أي إشارة إلى الإصدار الخاطئ 17.10 واستبداله بـ 1.9.10
+          find . -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/17.10/1.9.10/g' {} +
 
       - name: Build Debug APK
         run: |
