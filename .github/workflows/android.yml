@@ -1,4 +1,4 @@
-name: Unzip All and Build APK
+name: Debug and Build Zip
 
 on: [push, workflow_dispatch]
 
@@ -15,34 +15,37 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract Zip and Flatten Files
+      - name: Unzip and List All Files
         run: |
           ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
-            echo "Unzipping $ZIP_FILE..."
-            unzip -o "$ZIP_FILE" -d temp_zip_out
+            echo "=== Found ZIP File: $ZIP_FILE ==="
+            unzip -o "$ZIP_FILE" -d extracted_app
+            echo "=== Listing all extracted files: ==="
+            find extracted_app -maxdepth 4
             
-            # البحث عن المجلد الذي يحتوي على ملفات المشروع ونقل كل محتوياته للجذر
-            TARGET_DIR=$(find temp_zip_out -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "build.gradle" \) -exec dirname {} \; | head -n 1)
-            if [ -n "$TARGET_DIR" ]; then
-              cp -r "$TARGET_DIR"/* . 2>/dev/null || true
-            else
-              cp -r temp_zip_out/*/* . 2>/dev/null || true
+            # البحث عن مجلد يحتوي على build.gradle أو settings.gradle
+            BUILD_DIR=$(find extracted_app -name "build.gradle" -o -name "settings.gradle" | head -n 1 | xargs dirname 2>/dev/null || true)
+            if [ -n "$BUILD_DIR" ]; then
+              echo "=== Moving files from $BUILD_DIR to root ==="
+              cp -rn "$BUILD_DIR"/* . 2>/dev/null || true
             fi
+          else
+            echo "=== NO ZIP FILE FOUND IN REPOSITORY ==="
           fi
 
-      - name: Configure Android 9 Compatibility
+      - name: Configure Compatibility
         run: |
           echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
           find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g; s/JVM_1_8/JVM_17/g' {} +
 
       - name: Build Debug APK
         run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
-          else
+          if [ -f "./build.gradle" ] || [ -f "./settings.gradle" ] || [ -f "./build.gradle.kts" ]; then
             gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          else
+            echo "ERROR: No gradle build files were found after unzipping!"
+            exit 1
           fi
 
       - name: Upload Final APK
