@@ -31,7 +31,7 @@ jobs:
         run: |
           find . -name "gradlew" -exec chmod +x {} \; || true
 
-      - name: Build APK with Detailed Error Logging
+      - name: Build APK with Matching JVM Target
         run: |
           BUILD_FILE=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           
@@ -44,10 +44,13 @@ jobs:
           echo "Building in: $TARGET_DIR"
           cd "$TARGET_DIR"
           
+          # توحيد إصدارات JVM لتصبح Java 17 لكلا المترجمين تلقائياً
+          export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m"
+          
           if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --stacktrace --info -x test
+            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Pandroid.builtInKotlin=false
           else
-            gradle assembleDebug --stacktrace --info -x test
+            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Pandroid.builtInKotlin=false
           fi
 
       - name: Upload Production APK
