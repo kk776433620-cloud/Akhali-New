@@ -16,30 +16,43 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      - name: Unzip Project Archive
+        run: |
+          find . -iname "*.zip" -exec unzip -o {} -d . \;
+          find . -iname "*.zip" -exec unzip -o {} -d . \;
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK Tools
-        uses: android-actions/setup-android@v3
-
-      - name: Ensure Executable Gradle
+      - name: Make Gradlew Executable
         run: |
           find . -name "gradlew" -exec chmod +x {} \; || true
 
-      - name: Build Debug APK
+      - name: Build APK with Detailed Error Logging
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --stacktrace
-          else
-            echo "Building with system gradle..."
-            gradle assembleDebug --stacktrace
+          BUILD_FILE=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
+          
+          if [ -z "$BUILD_FILE" ]; then
+            echo "Error: No build.gradle found!"
+            exit 1
           fi
 
-      - name: Find and Upload APK
+          TARGET_DIR=$(dirname "$BUILD_FILE")
+          echo "Building in: $TARGET_DIR"
+          cd "$TARGET_DIR"
+          
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --stacktrace --info -x test
+          else
+            gradle assembleDebug --stacktrace --info -x test
+          fi
+
+      - name: Upload Production APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: AlKahali-Smart-Assistant-App
           path: "**/build/outputs/apk/debug/*.apk"
