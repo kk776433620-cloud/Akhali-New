@@ -22,16 +22,16 @@ jobs:
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/xml
 
-          # نقل ملفات المشروع إلى المسارات الصحيحة
+          # نقل ملفات الأكواد إلى مجلد الموديول الصحيح
           mv *.kt app/src/main/java/com/example/app/ 2>/dev/null || true
           mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # إنشاء ملف settings.gradle
+          # إنشاء ملف settings.gradle لتعريف مجلد app كموديول أندرويد
           echo "include ':app'" > settings.gradle
 
-          # إنشاء build.gradle الرئيسي بإصدارات كوتلن و أندرويد الصحيحة والمستقرة
+          # إنشاء build.gradle الرئيسي
           cat << 'EOF' > build.gradle
           buildscript {
               repositories {
@@ -51,25 +51,51 @@ jobs:
           }
           EOF
 
-          # إعداد build.gradle الخاص بتطبيق app
-          if [ -f "build.gradle.app" ]; then
-            mv build.gradle.app app/build.gradle
-          elif [ -f "build.gradle" ] && [ ! -f "app/build.gradle" ]; then
-            cp build.gradle app/build.gradle
-          fi
+          # إعداد build.gradle الداخلي الخاص بالموديول app
+          cat << 'EOF' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+              id 'kotlin-android'
+          }
 
-      - name: Fix Kotlin Version References
+          android {
+              namespace 'com.example.app'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.example.app"
+                  minSdk 28  // يدعم أندرويد 9 فما فوق
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+          }
+          EOF
+
+      - name: Fix Kotlin Target Settings
         run: |
           echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
-          # تصحيح أي إشارة إلى الإصدار الخاطئ 17.10 واستبداله بـ 1.9.10
-          find . -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/17.10/1.9.10/g' {} +
 
       - name: Build Debug APK
         run: |
-          gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          gradle :app:assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
 
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
           name: Akhali-App-Android9
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: "app/build/outputs/apk/debug/*.apk"
