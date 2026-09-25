@@ -31,7 +31,7 @@ jobs:
         run: |
           find . -name "gradlew" -exec chmod +x {} \; || true
 
-      - name: Build APK with Matching JVM Target
+      - name: Fix JVM Target Mismatch (Force Java & Kotlin to 17)
         run: |
           BUILD_FILE=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           
@@ -44,11 +44,11 @@ jobs:
           echo "Building in: $TARGET_DIR"
           cd "$TARGET_DIR"
 
-          # فرض إصدار JVM المعياري على المترجمين لتفادي التضارب
+          # إجبار Java و Kotlin على استخدام الإصدار 17 وتوحيدهما
           if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=1.8 -Dkotlin.compiler.jvmTarget=1.8
+            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Dorg.gradle.jvmargs="-Xmx2048m"
           else
-            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=1.8 -Dkotlin.compiler.jvmTarget=1.8
+            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Dorg.gradle.jvmargs="-Xmx2048m"
           fi
 
       - name: Upload Production APK
