@@ -32,10 +32,9 @@ jobs:
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # إزالة خاصية package المحظورة في الأصدارات الحديثة
+          # إزالة خاصية package والأيقونات المفقودة لمنع أخطاء البناء
           if [ -f app/src/main/AndroidManifest.xml ]; then
             sed -i 's/package="[^"]*"//g' app/src/main/AndroidManifest.xml
-            # إزالة الإشارة للأيقونات المفقودة إن وجدت لمنع أخطاء الربط
             sed -i 's/android:icon="[^"]*"//g' app/src/main/AndroidManifest.xml
             sed -i 's/android:roundIcon="[^"]*"//g' app/src/main/AndroidManifest.xml
           fi
@@ -63,11 +62,12 @@ jobs:
           }
           EOF
 
-          # إعداد app/build.gradle
+          # إعداد app/build.gradle وإضافة كافة المكتبات المطلوبة (Room, Coroutines, AndroidX)
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
               id 'kotlin-android'
+              id 'kotlin-kapt'
           }
 
           android {
@@ -95,6 +95,15 @@ jobs:
               implementation 'androidx.core:core-ktx:1.10.1'
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.9.0'
+              
+              // مكتبات Room Database
+              implementation 'androidx.room:room-runtime:2.6.1'
+              implementation 'androidx.room:room-ktx:2.6.1'
+              kapt 'androidx.room:room-compiler:2.6.1'
+
+              // مكتبات Kotlin Coroutines و Lifecycle
+              implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+              implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
           }
           EOF
 
