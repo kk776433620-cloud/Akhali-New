@@ -1,4 +1,4 @@
-name: Debug and Build Zip
+name: Auto-Structure and Build APK
 
 on: [push, workflow_dispatch]
 
@@ -15,41 +15,61 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Unzip and List All Files
+      - name: Restructure Project Files Automatically
         run: |
-          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
-          if [ -n "$ZIP_FILE" ]; then
-            echo "=== Found ZIP File: $ZIP_FILE ==="
-            unzip -o "$ZIP_FILE" -d extracted_app
-            echo "=== Listing all extracted files: ==="
-            find extracted_app -maxdepth 4
-            
-            # البحث عن مجلد يحتوي على build.gradle أو settings.gradle
-            BUILD_DIR=$(find extracted_app -name "build.gradle" -o -name "settings.gradle" | head -n 1 | xargs dirname 2>/dev/null || true)
-            if [ -n "$BUILD_DIR" ]; then
-              echo "=== Moving files from $BUILD_DIR to root ==="
-              cp -rn "$BUILD_DIR"/* . 2>/dev/null || true
-            fi
-          else
-            echo "=== NO ZIP FILE FOUND IN REPOSITORY ==="
+          echo "=== Organizing project structure ==="
+          # إنشاء الهيكلية القياسية لأندرويد
+          mkdir -p app/src/main/java/com/example/app
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/xml
+
+          # نقل ملفات الأكواد والموارد إلى أماكنها الصحيحة
+          mv *.kt app/src/main/java/com/example/app/ 2>/dev/null || true
+          mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
+          mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
+          mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
+
+          # إنشاء ملف settings.gradle رئيسي إذا لم يكن موجوداً
+          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
+            echo "include ':app'" > settings.gradle
           fi
 
-      - name: Configure Compatibility
+          # إنشاء build.gradle رئيسي شامل لمستودعات أندرويد
+          cat << 'EOF' > build.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.1.1'
+                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+
+          # تجهيز build.gradle الخاص بالموديول داخل مجلد app
+          if [ -f "build.gradle" ] && [ ! -f "app/build.gradle" ]; then
+            mv build.gradle app/build.gradle 2>/dev/null || true
+          fi
+
+      - name: Fix Java & Android 9 Compatibility
         run: |
           echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
           find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g; s/JVM_1_8/JVM_17/g' {} +
 
       - name: Build Debug APK
         run: |
-          if [ -f "./build.gradle" ] || [ -f "./settings.gradle" ] || [ -f "./build.gradle.kts" ]; then
-            gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
-          else
-            echo "ERROR: No gradle build files were found after unzipping!"
-            exit 1
-          fi
+          gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
 
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Akhali-Android9-APK
+          name: Akhali-App-Android9
           path: "**/build/outputs/apk/debug/*.apk"
