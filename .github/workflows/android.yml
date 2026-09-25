@@ -1,0 +1,45 @@
+name: Build APK from Zip
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Unzip Uploaded Project
+        run: |
+          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Unzipping $ZIP_FILE..."
+            unzip -o "$ZIP_FILE" -d extracted_app
+            cp -rn extracted_app/*/* . 2>/dev/null || cp -rn extracted_app/* . 2>/dev/null || true
+          fi
+
+      - name: Fix Compatibility for Android 9
+        run: |
+          echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
+          find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g; s/JVM_1_8/JVM_17/g' {} +
+
+      - name: Build Debug APK
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          else
+            gradle assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          fi
+
+      - name: Upload Final APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Akhali-App-Android9
+          path: "**/build/outputs/apk/debug/*.apk"
