@@ -43,14 +43,12 @@ jobs:
           TARGET_DIR=$(dirname "$BUILD_FILE")
           echo "Building in: $TARGET_DIR"
           cd "$TARGET_DIR"
-          
-          # توحيد إصدارات JVM لتصبح Java 17 لكلا المترجمين تلقائياً
-          export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m"
-          
+
+          # فرض إصدار JVM المعياري على المترجمين لتفادي التضارب
           if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Pandroid.builtInKotlin=false
+            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=1.8 -Dkotlin.compiler.jvmTarget=1.8
           else
-            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Pandroid.builtInKotlin=false
+            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=1.8 -Dkotlin.compiler.jvmTarget=1.8
           fi
 
       - name: Upload Production APK
