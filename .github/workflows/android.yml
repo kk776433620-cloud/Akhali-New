@@ -15,6 +15,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Restructure Project Files Automatically
         run: |
           echo "=== Organizing project structure ==="
@@ -28,7 +31,7 @@ jobs:
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # إنشاء ملف settings.gradle لتعريف مجلد app كموديول أندرويد
+          # إنشاء ملف settings.gradle
           echo "include ':app'" > settings.gradle
 
           # إنشاء build.gradle الرئيسي
@@ -39,8 +42,8 @@ jobs:
                   mavenCentral()
               }
               dependencies {
-                  classpath 'com.android.tools.build:gradle:8.1.1'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10'
+                  classpath 'com.android.tools.build:gradle:8.2.2'
+                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22'
               }
           }
           allprojects {
@@ -64,7 +67,7 @@ jobs:
 
               defaultConfig {
                   applicationId "com.example.app"
-                  minSdk 28  // يدعم أندرويد 9 فما فوق
+                  minSdk 28
                   targetSdk 34
                   versionCode 1
                   versionName "1.0"
@@ -86,13 +89,10 @@ jobs:
           }
           EOF
 
-      - name: Fix Kotlin Target Settings
+      - name: Build APK with Gradle Wrapper
         run: |
-          echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
-
-      - name: Build Debug APK
-        run: |
-          gradle :app:assembleDebug -Pkotlin.jvm.target.validation.mode=IGNORE
+          gradle wrapper --gradle-version 8.5
+          ./gradlew :app:assembleDebug --no-daemon
 
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
