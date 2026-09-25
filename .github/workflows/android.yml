@@ -62,7 +62,7 @@ jobs:
           }
           EOF
 
-          # إعداد app/build.gradle وإضافة كافة المكتبات المطلوبة (Room, Coroutines, AndroidX)
+          # إعداد app/build.gradle وإضافة كافة المكتبات المطلوبة
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -100,6 +100,11 @@ jobs:
               implementation 'androidx.room:room-runtime:2.6.1'
               implementation 'androidx.room:room-ktx:2.6.1'
               kapt 'androidx.room:room-compiler:2.6.1'
+
+              // مكتبات Google AI (Gemini) و OkHttp و Gson
+              implementation 'com.google.ai.client.generativeai:generativeai:0.2.0'
+              implementation 'com.squareup.okhttp3:okhttp:4.11.0'
+              implementation 'com.google.code.gson:gson:2.10.1'
 
               // مكتبات Kotlin Coroutines و Lifecycle
               implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
