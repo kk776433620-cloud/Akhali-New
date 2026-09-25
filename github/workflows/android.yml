@@ -3,23 +3,19 @@ name: Build Al-Kahali Assistant Production APK
 on:
   push:
     branches: [ "main", "master", "رئيسي" ]
-  pull_request:
-    branches: [ "main", "master", "رئيسي" ]
   workflow_dispatch:
 
 jobs:
   build:
     name: Compile and Package Android Application
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
       - name: Unzip Project Archive
         run: |
-          find . -iname "*.zip" -exec unzip -o {} -d . \;
-          find . -iname "*.zip" -exec unzip -o {} -d . \;
+          find . -iname "*.zip" -exec unzip -o {} -d . \; || true
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -27,28 +23,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Fix JVM Target Mismatch
+        run: |
+          find . -name "build.gradle" -type f -exec sed -i 's/VERSION_1_8/VERSION_17/g' {} \;
+          find . -name "build.gradle" -type f -exec sed -i 's/1_8/17/g' {} \;
+          find . -name "build.gradle.kts" -type f -exec sed -i 's/JVM_1_8/JVM_17/g' {} \;
+          find . -name "build.gradle.kts" -type f -exec sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' {} \;
+          find . -name "build.gradle.kts" -type f -exec sed -i "s/jvmTarget = '1.8'/jvmTarget = '17'/g" {} \;
+
       - name: Make Gradlew Executable
         run: |
           find . -name "gradlew" -exec chmod +x {} \; || true
 
-      - name: Fix JVM Target Mismatch (Force Java & Kotlin to 17)
+      - name: Build APK
         run: |
           BUILD_FILE=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
-          
-          if [ -z "$BUILD_FILE" ]; then
-            echo "Error: No build.gradle found!"
-            exit 1
-          fi
-
           TARGET_DIR=$(dirname "$BUILD_FILE")
           echo "Building in: $TARGET_DIR"
           cd "$TARGET_DIR"
-
-          # إجبار Java و Kotlin على استخدام الإصدار 17 وتوحيدهما
           if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Dorg.gradle.jvmargs="-Xmx2048m"
+            ./gradlew assembleDebug --stacktrace
           else
-            gradle assembleDebug -Dorg.gradle.java.home=$JAVA_HOME -Pkotlin.compiler.jvmTarget=17 -Dorg.gradle.jvmargs="-Xmx2048m"
+            gradle assembleDebug --stacktrace
           fi
 
       - name: Upload Production APK
