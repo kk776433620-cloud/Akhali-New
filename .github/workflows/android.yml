@@ -26,17 +26,21 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/mipmap-hdpi
 
-          # نقل ملفات الأكواد والموارد
+          # نقل الأكواد والموارد
           mv *.kt app/src/main/java/com/akhali/smartassistant/ 2>/dev/null || true
           mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # تنظيف المانيفست والتأكد من وجود Launcher ليظهر التطبيق في الشاشة الرئيسية
+          # إنشاء أيقونة افتراضية لمنع خطأ AAPT المفقود
+          echo '<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#3DDC84" android:pathData="M0,0h108v108h-108z"/></vector>' > app/src/main/res/mipmap-hdpi/ic_launcher.xml
+
+          # تنظيف ملف AndroidManifest.xml وضمان وجود LAUNCHER
           if [ -f app/src/main/AndroidManifest.xml ]; then
             sed -i 's/package="[^"]*"//g' app/src/main/AndroidManifest.xml
-            
-            # التأكد من إضافة intent-filter الخاص بالـ Launcher إذا لم يكن موجوداً
+            sed -i 's/android:icon="[^"]*"/android:icon="@mipmap\/ic_launcher"/g' app/src/main/AndroidManifest.xml
+            sed -i 's/android:roundIcon="[^"]*"/android:roundIcon="@mipmap\/ic_launcher"/g' app/src/main/AndroidManifest.xml
+
             if ! grep -q "android.intent.category.LAUNCHER" app/src/main/AndroidManifest.xml; then
               sed -i '/<\/activity>/i \            <intent-filter>\n                <action android:name="android.intent.action.MAIN" />\n                <category android:name="android.intent.category.LAUNCHER" />\n            </intent-filter>' app/src/main/AndroidManifest.xml
             fi
