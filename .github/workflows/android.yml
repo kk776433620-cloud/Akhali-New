@@ -25,13 +25,26 @@ jobs:
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
 
           # نقل ملفات الأكواد والموارد
           mv *.kt app/src/main/java/com/akhali/smartassistant/ 2>/dev/null || true
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # إنشاء أيقونة التطبيق في مجلد drawable لتجنب مشاكل mipmap
+          # إنشاء ملف styles.xml بـ Theme متوافق لمنع الانهيار (Crash) عند الفتح
+          cat << 'EOF' > app/src/main/res/values/styles.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="Theme.App" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+                  <item name="colorPrimary">#2196F3</item>
+                  <item name="colorPrimaryDark">#1976D2</item>
+                  <item name="colorAccent">#03A9F4</item>
+              </style>
+          </resources>
+          EOF
+
+          # إنشاء أيقونة التطبيق في مجلد drawable
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp"
@@ -44,7 +57,7 @@ jobs:
           </vector>
           EOF
 
-          # كتابة ملف AndroidManifest.xml صحيح وسليم 100% يضمن ظهور الأيقونة على الشاشة
+          # كتابة ملف AndroidManifest.xml المحدث بالـ Theme الصحيح
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -58,7 +71,7 @@ jobs:
                   android:icon="@drawable/ic_launcher"
                   android:label="Akhali Assistant"
                   android:supportsRtl="true"
-                  android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+                  android:theme="@style/Theme.App">
 
                   <activity
                       android:name="com.akhali.smartassistant.MainActivity"
@@ -156,3 +169,4 @@ jobs:
         with:
           name: Akhali-App-Android9
           path: "app/build/outputs/apk/debug/*.apk"
+          if-no-files-found: error
