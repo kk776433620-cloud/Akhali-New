@@ -1,4 +1,4 @@
-name: Build APK from Zip Path
+name: Unzip All and Build APK
 
 on: [push, workflow_dispatch]
 
@@ -15,23 +15,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Unzip and Smart Locate Project
+      - name: Extract Zip and Flatten Files
         run: |
           ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
-            unzip -o "$ZIP_FILE" -d extracted_app
+            unzip -o "$ZIP_FILE" -d temp_zip_out
             
-            # البحث عن مجلد المشروع الحقيقي الذي يحتوي على settings.gradle أو build.gradle
-            PROJECT_DIR=$(find extracted_app -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "build.gradle" \) -exec dirname {} \; | head -n 1)
-            
-            if [ -n "$PROJECT_DIR" ]; then
-              echo "Found project at: $PROJECT_DIR"
-              cp -r "$PROJECT_DIR"/* . 2>/dev/null || true
+            # البحث عن المجلد الذي يحتوي على ملفات المشروع ونقل كل محتوياته للجذر
+            TARGET_DIR=$(find temp_zip_out -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "build.gradle" \) -exec dirname {} \; | head -n 1)
+            if [ -n "$TARGET_DIR" ]; then
+              cp -r "$TARGET_DIR"/* . 2>/dev/null || true
+            else
+              cp -r temp_zip_out/*/* . 2>/dev/null || true
             fi
           fi
 
-      - name: Fix Compatibility for Android 9
+      - name: Configure Android 9 Compatibility
         run: |
           echo "kotlin.jvm.target.validation.mode=IGNORE" >> gradle.properties
           find . -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -exec sed -i 's/1_8/17/g; s/1.8/17/g; s/VERSION_1_8/VERSION_17/g; s/JVM_1_8/JVM_17/g' {} +
@@ -48,5 +48,5 @@ jobs:
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Akhali-App-Android9
+          name: Akhali-Android9-APK
           path: "**/build/outputs/apk/debug/*.apk"
