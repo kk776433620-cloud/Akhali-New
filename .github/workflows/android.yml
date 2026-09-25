@@ -16,12 +16,17 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Unzip Project Files if ZIP Exists
+      - name: Unzip Alakhali Project Archive
         run: |
-          ZIP_FILE=$(find . -maxdepth 2 -iname "*.zip" | head -n 1)
-          if [ -n "$ZIP_FILE" ]; then
-            echo "Unzipping $ZIP_FILE..."
-            unzip -o "$ZIP_FILE" -d .
+          if [ -f "Alakhali-main.zip" ]; then
+            echo "Unzipping Alakhali-main.zip..."
+            unzip -o Alakhali-main.zip -d .
+          else
+            echo "Searching for any zip archive..."
+            ZIP_FILE=$(find . -maxdepth 2 -iname "*.zip" | head -n 1)
+            if [ -n "$ZIP_FILE" ]; then
+              unzip -o "$ZIP_FILE" -d .
+            fi
           fi
 
       - name: Set up JDK 17
@@ -30,12 +35,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build APK Safe Execution
+      - name: Locate and Build APK
         run: |
           BUILD_FILE=$(find . -name "build.gradle" | head -n 1)
           
           if [ -z "$BUILD_FILE" ]; then
-            echo "Error: build.gradle not found in repository or zip archive!"
+            echo "Error: Could not locate build.gradle inside extracted files!"
             exit 1
           fi
 
