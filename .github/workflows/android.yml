@@ -54,7 +54,7 @@ jobs:
           }
           EOF
 
-          # إعداد build.gradle الداخلي الخاص بالموديول app
+          # إعداد app/build.gradle بإصدارات متوافقة ومضمونة
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -83,16 +83,16 @@ jobs:
           }
 
           dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.core:core-ktx:1.10.1'
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
       - name: Build APK with Gradle Wrapper
         run: |
           gradle wrapper --gradle-version 8.5
-          ./gradlew :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleDebug --no-daemon -Pandroid.useAndroidX=true
 
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
