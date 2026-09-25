@@ -18,7 +18,7 @@ jobs:
 
       - name: Unzip Project Files if ZIP Exists
         run: |
-          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 2 -iname "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d .
@@ -30,13 +30,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build APK
+      - name: Build APK Safe Execution
         run: |
-          TARGET_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
-          if [ -z "$TARGET_DIR" ]; then
-            echo "Error: build.gradle not found even after unzipping!"
+          BUILD_FILE=$(find . -name "build.gradle" | head -n 1)
+          
+          if [ -z "$BUILD_FILE" ]; then
+            echo "Error: build.gradle not found in repository or zip archive!"
             exit 1
           fi
+
+          TARGET_DIR=$(dirname "$BUILD_FILE")
           echo "Building inside directory: $TARGET_DIR"
           cd "$TARGET_DIR"
           
