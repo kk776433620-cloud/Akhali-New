@@ -1,4 +1,4 @@
-name: Build APK from Zip
+name: Build APK from Zip Path
 
 on: [push, workflow_dispatch]
 
@@ -15,14 +15,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Unzip Uploaded Project
+      - name: Unzip and Smart Locate Project
         run: |
           ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d extracted_app
-            # نقل كل المحتويات إلى المجلد الرئيسي بغض النظر عن العمق
-            find extracted_app -mindepth 1 -maxdepth 3 -type f -name "settings.gradle*" -exec dirname {} \; | head -n 1 | xargs -I {} cp -r {}/. .
+            
+            # البحث عن مجلد المشروع الحقيقي الذي يحتوي على settings.gradle أو build.gradle
+            PROJECT_DIR=$(find extracted_app -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "build.gradle" \) -exec dirname {} \; | head -n 1)
+            
+            if [ -n "$PROJECT_DIR" ]; then
+              echo "Found project at: $PROJECT_DIR"
+              cp -r "$PROJECT_DIR"/* . 2>/dev/null || true
+            fi
           fi
 
       - name: Fix Compatibility for Android 9
