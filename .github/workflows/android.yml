@@ -29,7 +29,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/values
 
-          # نقل ملفات المشروع
+          # نقل الملفات المتبقية
           mv FloatingWidgetService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv SystemControlAccessibilityService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv VoiceRecognitionEngine.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
@@ -39,10 +39,11 @@ jobs:
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # كتابة MainActivity.kt المدمج بمفتاحك تلقائياً
+          # كتابة ملف MainActivity.kt
           cat << "EOF" > app/src/main/java/com/akhali/smartassistant/MainActivity.kt
           package com.akhali.smartassistant
 
+          import android.content.Context
           import android.content.Intent
           import android.net.Uri
           import android.os.Build
@@ -70,10 +71,8 @@ jobs:
               private lateinit var tts: TextToSpeech
               private lateinit var speechRecognizer: SpeechRecognizer
               private lateinit var etMessageInput: EditText
+              private lateinit var etApiKey: EditText
               private lateinit var tvChatLog: TextView
-              
-              // المفتاح الخاص بك مدمج تلقائياً
-              private val apiKey = "AQ.Ab8RN6JsWzblic2AQtyxE0rBDnFLp4kOvHmo0DoxxHVy2i85eQ"
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -81,7 +80,21 @@ jobs:
 
                   tts = TextToSpeech(this, this)
                   etMessageInput = findViewById(R.id.etMessageInput)
+                  etApiKey = findViewById(R.id.etApiKey)
                   tvChatLog = findViewById(R.id.tvChatLog)
+
+                  val prefs = getSharedPreferences("AkhaliPrefs", Context.MODE_PRIVATE)
+                  etApiKey.setText(prefs.getString("GEMINI_KEY", ""))
+
+                  findViewById<Button>(R.id.btnSaveKey).setOnClickListener {
+                      val key = etApiKey.text.toString().trim()
+                      if (key.isNotEmpty()) {
+                          prefs.edit().putString("GEMINI_KEY", key).apply()
+                          Toast.makeText(this, "تم حفظ المفتاح الجديد بنجاح", Toast.LENGTH_SHORT).show()
+                      } else {
+                          Toast.makeText(this, "يرجى أدخال مفتاح جديد أولاً", Toast.LENGTH_SHORT).show()
+                      }
+                  }
 
                   findViewById<Button>(R.id.btnSend).setOnClickListener {
                       val text = etMessageInput.text.toString().trim()
@@ -102,7 +115,7 @@ jobs:
                           startActivity(intent)
                       } else {
                           startService(Intent(this, FloatingWidgetService::class.java))
-                          Toast.makeText(this, "تم تشغيل المساعد العائم", Toast.LENGTH_SHORT).show()
+                          Toast.makeText(this, "تم تشغيل الزر العائم", Toast.LENGTH_SHORT).show()
                       }
                   }
 
@@ -113,6 +126,15 @@ jobs:
 
               private fun processUserQuery(query: String) {
                   appendMessage("أنت: " + query)
+                  val prefs = getSharedPreferences("AkhaliPrefs", Context.MODE_PRIVATE)
+                  val apiKey = prefs.getString("GEMINI_KEY", "") ?: ""
+
+                  if (apiKey.isEmpty()) {
+                      val noKeyMsg = "يرجى أدخال مفتاح Gemini API الجديد والضغط على حفظ."
+                      appendMessage("المساعد: " + noKeyMsg)
+                      speakText(noKeyMsg)
+                      return
+                  }
 
                   lifecycleScope.launch {
                       appendMessage("المساعد: جاري التفكير والرد...")
@@ -128,9 +150,9 @@ jobs:
                           tvChatLog.text = tvChatLog.text.toString().replace("المساعد: جاري التفكير والرد...", "المساعد: " + responseText)
                           speakText(responseText)
                       } catch (e: Exception) {
-                          val errorMsg = "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي: " + e.localizedMessage
+                          val errorMsg = "حدث خطأ في المفتاح أو الاتصال: " + e.localizedMessage
                           tvChatLog.text = tvChatLog.text.toString().replace("المساعد: جاري التفكير والرد...", "المساعد: " + errorMsg)
-                          speakText("حدث خطأ في الاتصال")
+                          speakText("حدث خطأ، يرجى التثبت من المفتاح")
                       }
                   }
               }
@@ -192,7 +214,7 @@ jobs:
           }
           EOF
 
-          # تصميم الشاشة الرئيسية
+          # تصميم الواجهة الرئيسية
           cat << "EOF" > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -210,6 +232,27 @@ jobs:
                   android:textSize="22sp"
                   android:textStyle="bold" />
 
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_marginBottom="8dp">
+
+                  <EditText
+                      android:id="@+id/etApiKey"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:hint="أدخل مفتاح Gemini API الجديد"
+                      android:inputType="textPassword" />
+
+                  <Button
+                      android:id="@+id/btnSaveKey"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="حفظ" />
+              </LinearLayout>
+
               <ScrollView
                   android:id="@+id/scrollChat"
                   android:layout_width="match_parent"
@@ -223,7 +266,7 @@ jobs:
                       android:id="@+id/tvChatLog"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
-                      android:text="أهلاً بك! اكتب أي سؤال أو تحدث وسيجيبك المساعد فوراً..."
+                      android:text="ضع المفتاح الجديد بالأعلى ثم اضغط حفظ لتفعيل الذكاء الاصطناعي."
                       android:textColor="#333333"
                       android:textSize="16sp" />
               </ScrollView>
@@ -267,15 +310,15 @@ jobs:
                       android:id="@+id/btnAccessibility"
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
-                      android:layout_marginStart="4dp"
                       android:layout_weight="1"
-                      android:text="إمكانية الوصول" />
+                      android:text="إمكانية الوصول"
+                      android:layout_marginStart="4dp" />
               </LinearLayout>
 
           </LinearLayout>
           EOF
 
-          # واجهة الشاشة العائمة
+          # تصميم الشاشة العائمة
           cat << "EOF" > app/src/main/res/layout/layout_floating_widget.xml
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -378,7 +421,7 @@ jobs:
           </manifest>
           EOF
 
-          # إنشاء ملف settings.gradle
+          # settings.gradle
           echo "include ':app'" > settings.gradle
 
           # build.gradle الرئيسي
