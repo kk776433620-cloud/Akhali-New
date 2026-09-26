@@ -29,7 +29,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/values
 
-          # نقل الملفات المتبقية
+          # نقل ملفات المشروع
           mv FloatingWidgetService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv SystemControlAccessibilityService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv VoiceRecognitionEngine.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
@@ -39,7 +39,7 @@ jobs:
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # كتابة ملف MainActivity.kt
+          # كتابة MainActivity.kt مع إرجاع اسم النموذج إلى gemini-2.5-flash المعتمد
           cat << "EOF" > app/src/main/java/com/akhali/smartassistant/MainActivity.kt
           package com.akhali.smartassistant
 
@@ -90,7 +90,7 @@ jobs:
                       val key = etApiKey.text.toString().trim()
                       if (key.isNotEmpty()) {
                           prefs.edit().putString("GEMINI_KEY", key).apply()
-                          Toast.makeText(this, "تم حفظ المفتاح الجديد بنجاح", Toast.LENGTH_SHORT).show()
+                          Toast.makeText(this, "تم حفظ المفتاح بنجاح", Toast.LENGTH_SHORT).show()
                       } else {
                           Toast.makeText(this, "يرجى أدخال مفتاح جديد أولاً", Toast.LENGTH_SHORT).show()
                       }
@@ -130,7 +130,7 @@ jobs:
                   val apiKey = prefs.getString("GEMINI_KEY", "") ?: ""
 
                   if (apiKey.isEmpty()) {
-                      val noKeyMsg = "يرجى أدخال مفتاح Gemini API الجديد والضغط على حفظ."
+                      val noKeyMsg = "يرجى أدخال مفتاح Gemini API والضغط على حفظ."
                       appendMessage("المساعد: " + noKeyMsg)
                       speakText(noKeyMsg)
                       return
@@ -141,7 +141,7 @@ jobs:
                       try {
                           val responseText = withContext(Dispatchers.IO) {
                               val generativeModel = GenerativeModel(
-                                  modelName = "gemini-1.5-flash",
+                                  modelName = "gemini-2.5-flash",
                                   apiKey = apiKey
                               )
                               val response = generativeModel.generateContent(query)
@@ -266,7 +266,7 @@ jobs:
                       android:id="@+id/tvChatLog"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
-                      android:text="ضع المفتاح الجديد بالأعلى ثم اضغط حفظ لتفعيل الذكاء الاصطناعي."
+                      android:text="ضع المفتاح بالأعلى ثم اضغط حفظ لتفعيل الذكاء الاصطناعي."
                       android:textColor="#333333"
                       android:textSize="16sp" />
               </ScrollView>
