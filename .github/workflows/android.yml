@@ -29,7 +29,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/values
 
-          # نقل ملفات الكود والموارد
+          # نقل ملفات المشروع
           mv FloatingWidgetService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv SystemControlAccessibilityService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv VoiceRecognitionEngine.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
@@ -39,7 +39,7 @@ jobs:
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # إنشاء MainActivity.kt بدون أخطاء تنسيق
+          # كتابة MainActivity.kt المدمج بمفتاحك تلقائياً
           cat << "EOF" > app/src/main/java/com/akhali/smartassistant/MainActivity.kt
           package com.akhali.smartassistant
 
@@ -57,7 +57,12 @@ jobs:
           import android.widget.TextView
           import android.widget.Toast
           import androidx.appcompat.app.AppCompatActivity
+          import androidx.lifecycle.lifecycleScope
           import com.akhali.smartassistant.services.FloatingWidgetService
+          import com.google.ai.client.generativeai.GenerativeModel
+          import kotlinx.coroutines.Dispatchers
+          import kotlinx.coroutines.launch
+          import kotlinx.coroutines.withContext
           import java.util.Locale
 
           class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
@@ -66,6 +71,9 @@ jobs:
               private lateinit var speechRecognizer: SpeechRecognizer
               private lateinit var etMessageInput: EditText
               private lateinit var tvChatLog: TextView
+              
+              // المفتاح الخاص بك مدمج تلقائياً
+              private val apiKey = "AQ.Ab8RN6JsWzblic2AQtyxE0rBDnFLp4kOvHmo0DoxxHVy2i85eQ"
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -105,9 +113,26 @@ jobs:
 
               private fun processUserQuery(query: String) {
                   appendMessage("أنت: " + query)
-                  val reply = "أهلاً بك، تم استلام أصل أمرك: " + query
-                  appendMessage("المساعد: " + reply)
-                  speakText(reply)
+
+                  lifecycleScope.launch {
+                      appendMessage("المساعد: جاري التفكير والرد...")
+                      try {
+                          val responseText = withContext(Dispatchers.IO) {
+                              val generativeModel = GenerativeModel(
+                                  modelName = "gemini-1.5-flash",
+                                  apiKey = apiKey
+                              )
+                              val response = generativeModel.generateContent(query)
+                              response.text ?: "لم أستطع الحصول على إجابة."
+                          }
+                          tvChatLog.text = tvChatLog.text.toString().replace("المساعد: جاري التفكير والرد...", "المساعد: " + responseText)
+                          speakText(responseText)
+                      } catch (e: Exception) {
+                          val errorMsg = "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي: " + e.localizedMessage
+                          tvChatLog.text = tvChatLog.text.toString().replace("المساعد: جاري التفكير والرد...", "المساعد: " + errorMsg)
+                          speakText("حدث خطأ في الاتصال")
+                      }
+                  }
               }
 
               private fun appendMessage(msg: String) {
@@ -180,7 +205,7 @@ jobs:
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
                   android:layout_gravity="center_horizontal"
-                  android:layout_marginBottom="12dp"
+                  android:layout_marginBottom="8dp"
                   android:text="المساعد الأكحلي"
                   android:textSize="22sp"
                   android:textStyle="bold" />
@@ -192,13 +217,13 @@ jobs:
                   android:layout_weight="1"
                   android:background="#F5F5F5"
                   android:padding="8dp"
-                  android:layout_marginBottom="12dp">
+                  android:layout_marginBottom="8dp">
 
                   <TextView
                       android:id="@+id/tvChatLog"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
-                      android:text="أهلاً بك! اكتب رسالتك هنا للبدء..."
+                      android:text="أهلاً بك! اكتب أي سؤال أو تحدث وسيجيبك المساعد فوراً..."
                       android:textColor="#333333"
                       android:textSize="16sp" />
               </ScrollView>
@@ -207,7 +232,7 @@ jobs:
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal"
-                  android:layout_marginBottom="12dp">
+                  android:layout_marginBottom="8dp">
 
                   <EditText
                       android:id="@+id/etMessageInput"
@@ -242,15 +267,15 @@ jobs:
                       android:id="@+id/btnAccessibility"
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
+                      android:layout_marginStart="4dp"
                       android:layout_weight="1"
-                      android:text="إمكانية الوصول"
-                      android:layout_marginStart="4dp" />
+                      android:text="إمكانية الوصول" />
               </LinearLayout>
 
           </LinearLayout>
           EOF
 
-          # إنشاء واجهة شاشة عائمة
+          # واجهة الشاشة العائمة
           cat << "EOF" > app/src/main/res/layout/layout_floating_widget.xml
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -265,7 +290,7 @@ jobs:
           </FrameLayout>
           EOF
 
-          # ملف إعدادات إمكانية الوصول
+          # إعدادات إمكانية الوصول
           cat << "EOF" > app/src/main/res/xml/accessibility_service_config.xml
           <?xml version="1.0" encoding="utf-8"?>
           <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
@@ -276,7 +301,7 @@ jobs:
               android:notificationTimeout="100" />
           EOF
 
-          # إنشاء ملف styles.xml
+          # ملف styles.xml
           cat << "EOF" > app/src/main/res/values/styles.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -288,7 +313,7 @@ jobs:
           </resources>
           EOF
 
-          # إنشاء أيقونة التطبيق
+          # أيقونة التطبيق
           cat << "EOF" > app/src/main/res/drawable/ic_launcher.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp"
@@ -301,7 +326,7 @@ jobs:
           </vector>
           EOF
 
-          # كتابة AndroidManifest.xml المكتمل
+          # AndroidManifest.xml المكتمل
           cat << "EOF" > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -356,7 +381,7 @@ jobs:
           # إنشاء ملف settings.gradle
           echo "include ':app'" > settings.gradle
 
-          # إنشاء build.gradle الرئيسي
+          # build.gradle الرئيسي
           cat << "EOF" > build.gradle
           buildscript {
               repositories {
@@ -376,7 +401,7 @@ jobs:
           }
           EOF
 
-          # إعداد app/build.gradle
+          # app/build.gradle
           cat << "EOF" > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -415,7 +440,7 @@ jobs:
               implementation 'androidx.room:room-ktx:2.6.1'
               kapt 'androidx.room:room-compiler:2.6.1'
 
-              // Google AI (Gemini) & OkHttp & Gson
+              // Google AI (Gemini) SDK
               implementation 'com.google.ai.client.generativeai:generativeai:0.2.0'
               implementation 'com.squareup.okhttp3:okhttp:4.11.0'
               implementation 'com.google.code.gson:gson:2.10.1'
