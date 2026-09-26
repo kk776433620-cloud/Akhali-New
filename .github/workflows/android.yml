@@ -1,4 +1,4 @@
-name: Auto-Structure and Build APK
+name: Auto Structure and Build APK
 
 on: [push, workflow_dispatch]
 
@@ -29,7 +29,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/values
 
-          # نقل ملفات المشروع
+          # نقل ملفات الكود والموارد
           mv FloatingWidgetService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv SystemControlAccessibilityService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
           mv VoiceRecognitionEngine.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
@@ -39,8 +39,8 @@ jobs:
           mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
           mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
 
-          # كتابة MainActivity.kt خالية من الأخطاء والربط
-          cat << 'EOF' > app/src/main/java/com/akhali/smartassistant/MainActivity.kt
+          # إنشاء MainActivity.kt بدون أخطاء تنسيق
+          cat << "EOF" > app/src/main/java/com/akhali/smartassistant/MainActivity.kt
           package com.akhali.smartassistant
 
           import android.content.Intent
@@ -104,158 +104,14 @@ jobs:
               }
 
               private fun processUserQuery(query: String) {
-                  appendMessage("أنت: $query")
-                  val reply = "أهلاً بك! تم استلام أصل طلبك: $query"
-                  appendMessage("المساعد: $reply")
+                  appendMessage("أنت: " + query)
+                  val reply = "أهلاً بك، تم استلام أصل أمرك: " + query
+                  appendMessage("المساعد: " + reply)
                   speakText(reply)
               }
 
               private fun appendMessage(msg: String) {
-                  tvChatLog.append("\n\n$msg")
-              }
-
-              private fun speakText(text: String) {
-                  if (::tts.isInitialized) {
-                      tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
-                  }
-              }
-
-              private fun setupSpeechRecognizer() {
-                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-                  val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                      putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                      putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-SA")
-                  }
-
-                  speechRecognizer.setRecognitionListener(object : RecognitionListener {
-                      override fun onReadyForSpeech(params: Bundle?) {}
-                      override fun onBeginningOfSpeech() {}
-                      override fun onRmsChanged(rmsdB: Float) {}
-                      override fun onBufferReceived(buffer: ByteArray?) {}
-                      override fun onEndOfSpeech() {}
-                      override fun onError(توضح الصور خطأ البناء الدقيق وهو `Unresolved reference: generateResponse`، وسببه أن الدالة داخل ملف `GeminiCloudClient.kt` لديك تتمتع باسم مختلف أو تحتاج لإعداد مبسط مستقل في `MainActivity` لتجنب الاعتماد على دالة غير معرفة.
-
-إليك كود ملف **`android.yml`** المحسّن بالكامل، حيث يعالج هذا الخطأ برمجياً ويضمن نجاح البناء ورفع الـ APK فوراً:
-
-```yaml
-name: Auto-Structure and Build APK
-
-on: [push, workflow_dispatch]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Restructure Project Files Automatically
-        run: |
-          echo "=== Organizing project structure ==="
-          mkdir -p app/src/main/java/com/akhali/smartassistant/services
-          mkdir -p app/src/main/java/com/akhali/smartassistant/network
-          mkdir -p app/src/main/java/com/akhali/smartassistant/engine
-          mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/xml
-          mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/values
-
-          # نقل ملفات المشروع
-          mv FloatingWidgetService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
-          mv SystemControlAccessibilityService.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
-          mv VoiceRecognitionEngine.kt app/src/main/java/com/akhali/smartassistant/services/ 2>/dev/null || true
-          mv GeminiCloudClient.kt app/src/main/java/com/akhali/smartassistant/network/ 2>/dev/null || true
-          mv PredictiveEngine.kt app/src/main/java/com/akhali/smartassistant/engine/ 2>/dev/null || true
-          mv *.kt app/src/main/java/com/akhali/smartassistant/ 2>/dev/null || true
-          mv layout_*.xml app/src/main/res/layout/ 2>/dev/null || true
-          mv accessibility_*.xml app/src/main/res/xml/ 2>/dev/null || true
-
-          # كتابة MainActivity.kt البرمجية الكاملة بدون الاعتماد على دالة مفقودة
-          cat << 'EOF' > app/src/main/java/com/akhali/smartassistant/MainActivity.kt
-          package com.akhali.smartassistant
-
-          import android.content.Context
-          import android.content.Intent
-          import android.net.Uri
-          import android.os.Build
-          import android.os.Bundle
-          import android.provider.Settings
-          import android.speech.RecognitionListener
-          import android.speech.RecognizerIntent
-          import android.speech.SpeechRecognizer
-          import android.speech.tts.TextToSpeech
-          import android.widget.Button
-          import android.widget.EditText
-          import android.widget.TextView
-          import android.widget.Toast
-          import androidx.appcompat.app.AppCompatActivity
-          import androidx.lifecycle.lifecycleScope
-          import com.akhali.smartassistant.services.FloatingWidgetService
-          import kotlinx.coroutines.launch
-          import java.util.Locale
-
-          class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
-
-              private lateinit var tts: TextToSpeech
-              private lateinit var speechRecognizer: SpeechRecognizer
-              private lateinit var etMessageInput: EditText
-              private lateinit var tvChatLog: TextView
-
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContentView(R.layout.activity_main)
-
-                  tts = TextToSpeech(this, this)
-
-                  etMessageInput = findViewById(R.id.etMessageInput)
-                  tvChatLog = findViewById(R.id.tvChatLog)
-
-                  findViewById<Button>(R.id.btnSend).setOnClickListener {
-                      val text = etMessageInput.text.toString().trim()
-                      if (text.isNotEmpty()) {
-                          processUserQuery(text)
-                          etMessageInput.setText("")
-                      }
-                  }
-
-                  setupSpeechRecognizer()
-
-                  findViewById<Button>(R.id.btnStartService).setOnClickListener {
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                          val intent = Intent(
-                              Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                              Uri.parse("package:$packageName")
-                          )
-                          startActivity(intent)
-                      } else {
-                          startService(Intent(this, FloatingWidgetService::class.java))
-                          Toast.makeText(this, "تم تشغيل المساعد العائم", Toast.LENGTH_SHORT).show()
-                      }
-                  }
-
-                  findViewById<Button>(R.id.btnAccessibility).setOnClickListener {
-                      startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                  }
-              }
-
-              private fun processUserQuery(query: String) {
-                  appendMessage("أنت: $query")
-                  val reply = "أهلاً بك، تم استلام أصل أمرك: $query"
-                  appendMessage("المساعد: $reply")
-                  speakText(reply)
-              }
-
-              private fun appendMessage(msg: String) {
-                  tvChatLog.append("\n\n$msg")
+                  tvChatLog.append("\n\n" + msg)
               }
 
               private fun speakText(text: String) {
@@ -312,46 +168,107 @@ jobs:
           EOF
 
           # تصميم الشاشة الرئيسية
-          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          cat << "EOF" > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout android:layout_height="match_parent" android:layout_width="match_parent" android:orientation="vertical" android:padding="16dp" xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)">
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="16dp">
 
-              <TextView android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:layout_width="wrap_content" android:text="المساعد الأكحلي" android:textSize="22sp" android:textStyle="bold"/>
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_gravity="center_horizontal"
+                  android:layout_marginBottom="12dp"
+                  android:text="المساعد الأكحلي"
+                  android:textSize="22sp"
+                  android:textStyle="bold" />
 
-              <ScrollView android:background="#F5F5F5" android:id="@+id/scrollChat" android:layout_height="0dp" android:layout_marginBottom="12dp" android:layout_weight="1" android:layout_width="match_parent" android:padding="8dp">
+              <ScrollView
+                  android:id="@+id/scrollChat"
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1"
+                  android:background="#F5F5F5"
+                  android:padding="8dp"
+                  android:layout_marginBottom="12dp">
 
-                  <TextView android:id="@+id/tvChatLog" android:layout_height="wrap_content" android:layout_width="match_parent" android:text="أهلاً بك! اكتب رسالتك هنا للبدء..." android:textColor="#333333" android:textSize="16sp"/>
+                  <TextView
+                      android:id="@+id/tvChatLog"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="أهلاً بك! اكتب رسالتك هنا للبدء..."
+                      android:textColor="#333333"
+                      android:textSize="16sp" />
               </ScrollView>
 
-              <LinearLayout android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:layout_width="match_parent" android:orientation="horizontal">
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_marginBottom="12dp">
 
-                  <EditText android:hint="اكتب سؤالك هنا..." android:id="@+id/etMessageInput" android:layout_height="wrap_content" android:layout_weight="1" android:layout_width="0dp" android:padding="12dp"/>
+                  <EditText
+                      android:id="@+id/etMessageInput"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:hint="اكتب سؤالك هنا..."
+                      android:padding="12dp" />
 
-                  <Button android:id="@+id/btnSend" android:layout_height="wrap_content" android:layout_width="wrap_content" android:text="إرسال"/>
+                  <Button
+                      android:id="@+id/btnSend"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="إرسال" />
               </LinearLayout>
 
-              <LinearLayout android:layout_height="wrap_content" android:layout_width="match_parent" android:orientation="horizontal" android:weightSum="2">
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:weightSum="2">
 
-                  <Button android:id="@+id/btnStartService" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:layout_weight="1" android:layout_width="0dp" android:text="الزر العائم"/>
+                  <Button
+                      android:id="@+id/btnStartService"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="الزر العائم"
+                      android:layout_marginEnd="4dp" />
 
-                  <Button android:id="@+id/btnAccessibility" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:layout_weight="1" android:layout_width="0dp" android:text="إمكانية الوصول"/>
+                  <Button
+                      android:id="@+id/btnAccessibility"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="إمكانية الوصول"
+                      android:layout_marginStart="4dp" />
               </LinearLayout>
 
           </LinearLayout>
           EOF
 
           # إنشاء واجهة شاشة عائمة
-          cat << 'EOF' > app/src/main/res/layout/layout_floating_widget.xml
+          cat << "EOF" > app/src/main/res/layout/layout_floating_widget.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <FrameLayout android:background="#80000000" android:layout_height="wrap_content" android:layout_width="wrap_content" android:padding="8dp" xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)">
-              <ImageView android:layout_height="48dp" android:layout_width="48dp" android:src="@drawable/ic_launcher"/>
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:background="#80000000"
+              android:padding="8dp">
+              <ImageView
+                  android:layout_width="48dp"
+                  android:layout_height="48dp"
+                  android:src="@drawable/ic_launcher" />
           </FrameLayout>
           EOF
 
           # ملف إعدادات إمكانية الوصول
-          cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
+          cat << "EOF" > app/src/main/res/xml/accessibility_service_config.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <accessibility-service xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)"
+          <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
               android:accessibilityEventTypes="typeAllMask"
               android:accessibilityFeedbackType="feedbackGeneric"
               android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews"
@@ -360,7 +277,7 @@ jobs:
           EOF
 
           # إنشاء ملف styles.xml
-          cat << 'EOF' > app/src/main/res/values/styles.xml
+          cat << "EOF" > app/src/main/res/values/styles.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="Theme.App" parent="Theme.MaterialComponents.DayNight.NoActionBar">
@@ -372,8 +289,8 @@ jobs:
           EOF
 
           # إنشاء أيقونة التطبيق
-          cat << 'EOF' > app/src/main/res/drawable/ic_launcher.xml
-          <vector xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)"
+          cat << "EOF" > app/src/main/res/drawable/ic_launcher.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp"
               android:height="108dp"
               android:viewportWidth="108"
@@ -385,9 +302,9 @@ jobs:
           EOF
 
           # كتابة AndroidManifest.xml المكتمل
-          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          cat << "EOF" > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -440,7 +357,7 @@ jobs:
           echo "include ':app'" > settings.gradle
 
           # إنشاء build.gradle الرئيسي
-          cat << 'EOF' > build.gradle
+          cat << "EOF" > build.gradle
           buildscript {
               repositories {
                   google()
@@ -460,7 +377,7 @@ jobs:
           EOF
 
           # إعداد app/build.gradle
-          cat << 'EOF' > app/build.gradle
+          cat << "EOF" > app/build.gradle
           plugins {
               id 'com.android.application'
               id 'kotlin-android'
